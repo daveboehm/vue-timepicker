@@ -1,9 +1,9 @@
 <template>
-    <div class="timepicker__container" :class="{'error': timeInvalid || timeRequiredInvalid}"  @keyup.27="isShown = false;">
+    <div class="timepicker__container" :class="{'error': timeInvalid || timeRequiredInvalid}">
         <label v-if="label" class="timepicker__label">{{ label }}</label>
         <div class="timepicker" v-on-clickaway="closeTimepickerPopup">
-            <input class="timepicker__input" type="text" :placeholder="placeholder" v-model="updatedTime" @blur="validate" :required="required" @focus="closeTimepickerPopup()" />
-            <div class="timepicker__icon" @click="toggleTimepickerPopup">
+            <input class="timepicker__input" type="text" :placeholder="placeholder" v-model="updatedTime" @blur="validate" :required="required" @focus="closeTimepickerPopup()" @change="updateTimeManually($event)" />
+            <div class="timepicker__icon" @click="toggleTimepickerPopup" tabindex="0">
                 <svg class="icon icon-time"><use xlink:href="#icon-time"></use></svg>
             </div>
             <div class="timepicker__popup" v-show="isShown">
@@ -53,16 +53,17 @@
                 default: false
             },
             time: {
-                type: String
+                type: [ String, Date, Number ],
+                default: '12:00 PM'
             }
         },
         data() {
             return {
                 isShown: false,
-                updatedTime: moment(this.time).format('h:mm A'),
-                hour: moment(this.time).format('h'),
-                minute: moment(this.time).format('mm'),
-                ampm: moment(this.time).format('A'),
+                updatedTime: this.time || moment(this.time, "HH:mm A").format('h:mm A'),
+                hour: moment(this.time, "HH:mm A").format('h'),
+                minute: moment(this.time, "HH:mm A").format('mm'),
+                ampm: moment(this.time, "HH:mm A").format('A'),
                 timeInvalid: false,
                 timeRequiredInvalid: false
             }
@@ -98,22 +99,35 @@
             },
             updateTime() {
                 this.timeInvalid = false;
-                let newTime = new moment().set('hour', this.hour).set('minute', this.minute)
+                let newTime = new moment().set('hour', this.hour).set('minute', this.minute);
                 this.updatedTime = `${moment(newTime).format('h:mm')} ${this.ampm}`;
-                this.$emit('timepicker-updated', moment(newTime).toDate());
+                console.log(typeof(moment(newTime).toDate()), moment(newTime));
+                this.$emit('update', moment(newTime).format('hh:mm A'));
+            },
+            updateTimeManually(timeValue) {
+                // let newTime = timeValue.target.value;
+                this.updatedTime = timeValue.target.value;
+                this.validate()
+                // if ( moment(newTime).isValid() ) {
+                //     this.hour = moment(this.time, "HH:mm A").format('h');
+                //     this.minute = moment(this.time, "HH:mm A").format('mm');
+                //     this.ampm = moment(this.time, "HH:mm A").format('A');
+
+                //     // this.updatedTime = `${moment(newTime, 'hh:mm A').format('h:mm')} ${this.ampm}`;
+                //     this.$emit('update', moment(newTime, 'hh:mm A'));
+                // }
             },
             validate() {
     
                 if (this.updatedTime.length) {
-                    // Get time parts
                     let
+                    // Get time parts
                         x = this.updatedTime.split(':')[1],
                         hours = Number(this.updatedTime.split(':')[0]),
                         minutes = Number(x.split(' ')[0]),
-                        ampm = String(x.split(' ')[1]);
+                        ampm = String(x.split(' ')[1]),
     
                     // Validation rules for each part
-                    let
                         hoursValid = (hours > 0) && (hours < 13) && (typeof hours === 'number'),
                         minutesValid = (minutes > -1) && (minutes < 60) && (typeof minutes === 'number') && (minutes.toString().length == 2),
                         ampmValid = (ampm.toUpperCase() === 'AM') || (ampm.toUpperCase() === 'PM');
@@ -126,6 +140,7 @@
     
                     // Emit event for forms / pages to use. Data to emit along with event is up for discussion.
                     this.$emit('timepicker-invalid', this);
+                    this.$emit('update', this.updatedTime)
                 } else {
                     this.timeRequiredInvalid = true;
     
@@ -212,8 +227,8 @@
         background: #fff;
         margin-top: 5px;
         z-index: 1000;
-        width: 260px;
-        height: 205px;
+        width: 180px;
+        height: 140px;
         top: 100%;
         right: 0;
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
@@ -255,7 +270,7 @@
         flex-direction: row;
         justify-content: space-between;
         height: 100%;
-        padding: 30px 25px;
+        padding: 20px;
         box-sizing: border-box;
     }
     
@@ -305,7 +320,9 @@
     $arrowSize: 8px;
     $arrowColor: $dark-gray;
     .timepicker__arrowSelector {
-        font-size: 16px;
+        padding: 20px 10px;
+        display: flex;
+        align-items: center;
         border-color: $dark-gray;
         &:hover {
             border-color: $dark-gray * .9;

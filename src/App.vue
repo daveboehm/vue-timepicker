@@ -10,19 +10,33 @@
         </svg>
         <section class="section">
             <h2>Timepicker</h2>
-            <timepicker :label="'Pick a time!'" />
+            <timepicker :label="'Set the time'" :time="time" @update="setNewTime" />
+            <p>New Time Value: {{ time }}</p>
+            <button type="button">Hi</button>
         </section>
     </div>
 </template>
 
 <script>
     import Timepicker from './components/Timepicker.vue';
-    
+    import moment from 'moment';
+
     export default {
         name: 'app',
         components: {
             'timepicker': Timepicker
+        },
+        data() {
+            return {
+                time: undefined
+            }
+        },
+        methods: {
+            setNewTime(val) {
+                this.time = moment(val, 'hh:mm A').format('hh:mm A');
+            }
         }
+        
     }
 </script>
 
